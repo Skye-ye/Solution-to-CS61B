@@ -14,7 +14,7 @@ public class Primes {
      * The goal of this function is to make sure you learn to abstract away the inner
      * workings of a function and debug it as a black-box with the "Step Over" feature.
      *
-     * @source: https://www.geeksforgeeks.org/primality-test-set-2-fermet-method/
+     * @source: <a href="https://www.geeksforgeeks.org/primality-test-set-2-fermet-method/">...</a>
      * @param n an arbitary integrer
      * @return True iff. the integer is prime
      */
@@ -26,7 +26,7 @@ public class Primes {
         int k = 3; // Try k = 3 times
         while (k > 0)
         {
-            // Pick a random number in [2..n-2]
+            // Pick a random number in [2...n-2]
             // Above corner cases make sure that n > 4
             int a = 2 + (int)(Math.random() % (n - 4));
 
@@ -44,7 +44,7 @@ public class Primes {
      * This is a helper method to isPrime. You can ignore this method.
      * It is an iterative Function to calculate a^n mod p in log time
      *
-     * @source: https://www.geeksforgeeks.org/primality-test-set-2-fermet-method/
+     * @source: <a href="https://www.geeksforgeeks.org/primality-test-set-2-fermet-method/">...</a>
      */
     static int power(int a, int n, int p)
     {

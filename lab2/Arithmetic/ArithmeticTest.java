@@ -9,7 +9,7 @@ public class ArithmeticTest {
      * correct */
     @Test
     public void testProduct() {
-        /* assertEquals for comparison of ints takes two arguments:
+        /* assertEquals for comparison of integers takes two arguments:
         assertEquals(expected, actual).
         if it is false, then the assertion will be false,
         and this test will fail.
