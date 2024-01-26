@@ -167,7 +167,7 @@ public class Model extends Observable {
             Tile t = board.tile(col, row);
             startPostion -= 1;
             if (t != null){
-                if (t.row() != mergePosition) {
+                if (row != mergePosition) {
                     board.move(col, mergePosition, t);
                     changed = true;
                 }
