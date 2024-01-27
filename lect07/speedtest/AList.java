@@ -1,5 +1,3 @@
-package randomizedtest;
-
 /** Array based list.
  *  @author Josh Hug
  */
@@ -14,40 +12,39 @@ package randomizedtest;
  size: The number of items in the list should be size.
 */
 
-public class BuggyAList<Item> {
-    private Item[] items;
+public class AList {
+    private int[] items;
     private int size;
 
     /** Creates an empty list. */
-    public BuggyAList() {
-        items = (Item[]) new Object[1];
+    public AList() {
+        items = new int[100];
         size = 0;
     }
 
     /** Resizes the underlying array to the target capacity. */
     private void resize(int capacity) {
-        Item[] a = (Item[]) new Object[capacity];
-        for (int i = 0; i < size; i += 1) {
-            a[i] = items[i];
-        }
+        int[] a = new int[capacity];
+        System.arraycopy(items, 0, a, 0, size);
         items = a;
     }
 
     /** Inserts X into the back of the list. */
-    public void addLast(Item x) {
+    public void addLast(int x) {
         if (size == items.length) {
             resize(size * 2);
         }
+
         items[size] = x;
         size = size + 1;
     }
 
     /** Returns the item from the back of the list. */
-    public Item getLast() {
+    public int getLast() {
         return items[size - 1];
     }
     /** Gets the ith item in the list (0 is the front). */
-    public Item get(int i) {
+    public int get(int i) {
         return items[i];
     }
 
@@ -58,13 +55,9 @@ public class BuggyAList<Item> {
 
     /** Deletes item from back of the list and
       * returns deleted item. */
-    public Item removeLast() {
-        if ((size < items.length / 4) && (size > 4)) {
-            resize(items.length / 4);
-        }
-        Item x = getLast();
-        items[size - 1] = null;
+    public int removeLast() {
+        int x = getLast();
         size = size - 1;
         return x;
     }
-}
+} 

@@ -1,5 +1,3 @@
-package randomizedtest;
-
 /** Array based list.
  *  @author Josh Hug
  */
@@ -14,30 +12,29 @@ package randomizedtest;
  size: The number of items in the list should be size.
 */
 
-public class BuggyAList<Item> {
+public class AList<Item> {
     private Item[] items;
     private int size;
 
     /** Creates an empty list. */
-    public BuggyAList() {
-        items = (Item[]) new Object[1];
+    public AList() {
+        items = (Item[]) new Object[100];
         size = 0;
     }
 
     /** Resizes the underlying array to the target capacity. */
     private void resize(int capacity) {
         Item[] a = (Item[]) new Object[capacity];
-        for (int i = 0; i < size; i += 1) {
-            a[i] = items[i];
-        }
+        System.arraycopy(items, 0, a, 0, size);
         items = a;
     }
 
     /** Inserts X into the back of the list. */
     public void addLast(Item x) {
         if (size == items.length) {
-            resize(size * 2);
+            resize(size + 1);
         }
+
         items[size] = x;
         size = size + 1;
     }
@@ -59,12 +56,9 @@ public class BuggyAList<Item> {
     /** Deletes item from back of the list and
       * returns deleted item. */
     public Item removeLast() {
-        if ((size < items.length / 4) && (size > 4)) {
-            resize(items.length / 4);
-        }
         Item x = getLast();
         items[size - 1] = null;
         size = size - 1;
         return x;
     }
-}
+} 
