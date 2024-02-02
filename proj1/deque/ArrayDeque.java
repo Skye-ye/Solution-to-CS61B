@@ -1,6 +1,10 @@
 package deque;
 
-public class ArrayDeque<T> {
+import org.checkerframework.checker.nullness.qual.NonNull;
+
+import java.util.Iterator;
+
+public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
     private T[] items;
     private int size;
     private int nextFirst;
@@ -27,6 +31,7 @@ public class ArrayDeque<T> {
         nextLast = size;
     }
 
+    @Override
     public void addFirst(T item) {
         if (size == items.length) {
             resize(size * 2);
@@ -36,6 +41,7 @@ public class ArrayDeque<T> {
         size += 1;
     }
 
+    @Override
     public void addLast(T item) {
         if (size == items.length) {
             resize(size * 2);
@@ -45,25 +51,19 @@ public class ArrayDeque<T> {
         size += 1;
     }
 
-    public boolean isEmpty() {
-        return size == 0;
-    }
-
+    @Override
     public int size() {
         return size;
     }
 
+    @Override
     public void printDeque() {
         for (int i = (nextFirst + 1) % items.length; i != nextLast; i = (i + 1) % items.length) {
             System.out.print(items[i] + " ");
         }
     }
 
-    public T removeFirst() {
-        if (size == 0) {
-            return null;
-        }
-        nextFirst = (nextFirst + 1) % items.length;
+    private T removeTemplate(int nextFirst) {
         T temp = items[nextFirst];
         items[nextFirst] = null;
         size -= 1;
@@ -73,20 +73,25 @@ public class ArrayDeque<T> {
         return temp;
     }
 
+    @Override
+    public T removeFirst() {
+        if (size == 0) {
+            return null;
+        }
+        nextFirst = (nextFirst + 1) % items.length;
+        return removeTemplate(nextFirst);
+    }
+
+    @Override
     public T removeLast() {
         if (size == 0) {
             return null;
         }
         nextLast = (nextLast - 1 + items.length) % items.length;
-        T temp = items[nextLast];
-        items[nextLast] = null;
-        size -= 1;
-        if (items.length >= 16 && size < items.length / 4) {
-            resize(items.length / 2);
-        }
-        return temp;
+        return removeTemplate(nextLast);
     }
 
+    @Override
     public T get(int index) {
         if (index >= size || index < 0) {
             return null;
@@ -94,5 +99,54 @@ public class ArrayDeque<T> {
         return items[(nextFirst + 1 + index) % items.length];
     }
 
+    public boolean contains(T item) {
+        for (T x : this) {
+            if (x.equals(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @NonNull
+    public Iterator<T> iterator() {
+        return new ArrayDequeIterator();
+    }
+
+    private class ArrayDequeIterator implements Iterator<T> {
+        private int wizPos;
+
+        public ArrayDequeIterator() {
+            wizPos = 0;
+        }
+
+        public boolean hasNext() {
+            return wizPos < size;
+        }
+
+        public T next() {
+            T returnItem = items[(nextFirst + 1 + wizPos) % items.length];
+            wizPos += 1;
+            return returnItem;
+        }
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof ArrayDeque otherDeque) {
+            if (otherDeque.size() != this.size()) {
+                return false;
+            }
+            for (T item : this) {
+                if (!otherDeque.contains(item)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
 }

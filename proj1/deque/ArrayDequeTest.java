@@ -50,4 +50,24 @@ public class ArrayDequeTest {
             }
         }
     }
+
+    @Test
+    public void  equalsTest() {
+        ArrayDeque<Integer> test1 = new ArrayDeque<>();
+        ArrayDeque<Integer> test2 = new ArrayDeque<>();
+        for (int i = 0; i < 100; i++) {
+            if (i % 2 == 0) {
+                test1.addFirst(i);
+                test2.addFirst(i);
+            } else {
+                test1.addLast(i);
+                test2.addLast(i);
+            }
+        }
+        assertTrue(test1.equals(test2));
+        assertTrue(test2.equals(test1));
+        test2.addLast(100);
+        assertFalse(test1.equals(test2));
+        assertFalse(test2.equals(test1));
+    }
 }

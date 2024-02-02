@@ -168,4 +168,18 @@ public class LinkedListDequeTest {
         assertNull(testString.getRecursive(3));
         assertNull(testString.getRecursive(-1));
     }
+
+    @Test
+    public void equalsTest() {
+        LinkedListDeque<String> testString = new LinkedListDeque<>("like");
+        testString.addLast("apples");
+        testString.addFirst("I");
+        LinkedListDeque<String> testString2 = new LinkedListDeque<>("like");
+        testString2.addLast("apples");
+        testString2.addFirst("I");
+        assertTrue(testString.equals(testString2));
+        assertFalse(testString.equals(null));
+        assertFalse(testString.equals("fish"));
+        assertTrue(testString.equals(testString));
+    }
 }
