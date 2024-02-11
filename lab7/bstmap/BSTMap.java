@@ -2,10 +2,11 @@ package bstmap;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V>{
+public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     private class BSTNode {
         public K key;
@@ -13,7 +14,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V>{
         public BSTNode left;
         public BSTNode right;
 
-        public BSTNode(K k, V v){
+        public BSTNode(K k, V v) {
             key = k;
             value = v;
         }
@@ -22,7 +23,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V>{
     private BSTNode root;
     int size;
 
-    public BSTMap(){
+    public BSTMap() {
         root = null;
         size = 0;
     }
@@ -41,7 +42,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V>{
     }
 
     @Override
-    public void clear(){
+    public void clear() {
         root = null;
         size = 0;
     }
@@ -112,22 +113,83 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V>{
 
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        HashSet<K> set = new HashSet<>();
+        keySetHelper(root, set);
+        return set;
+    }
+
+    private void keySetHelper(BSTNode node, Set<K> set) {
+        if (node == null) {
+            return;
+        }
+        set.add(node.key);
+        keySetHelper(node.left, set);
+        keySetHelper(node.right, set);
     }
 
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        if (!containsKey(key)) {
+            return null;
+        }
+        V value = get(key);
+        root = removeHelper(root, key);
+        size -= 1;
+        return value;
+    }
+
+    private BSTNode removeHelper(BSTNode node, K key) {
+        if (node == null) {
+            return null;
+        }
+        int cmp = key.compareTo(node.key);
+        if (cmp > 0) {
+            node.right = removeHelper(node.right, key);
+        } else if (cmp < 0) {
+            node.left = removeHelper(node.left, key);
+        } else {
+            if (node.left == null) {
+                return node.right;
+            }
+            if (node.right == null) {
+                return node.left;
+            }
+            BSTNode temp = node;
+            node = minNode(temp.right);
+            node.right = removeMin(temp.right);
+            node.left = temp.left;
+        }
+        return node;
+    }
+
+    private BSTNode minNode(BSTNode node) {
+        if (node.left == null) {
+            return node;
+        }
+        return minNode(node.left);
+    }
+
+    private BSTNode removeMin(BSTNode node) {
+        if (node.left == null) {
+            return node.right;
+        }
+        node.left = removeMin(node.left);
+        return node;
     }
 
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        if (!containsKey(key) || !get(key).equals(value)) {
+            return null;
+        }
+        root = removeHelper(root, key);
+        size -= 1;
+        return value;
     }
 
     @Override
     @NonNull
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
+        return keySet().iterator();
     }
 }
