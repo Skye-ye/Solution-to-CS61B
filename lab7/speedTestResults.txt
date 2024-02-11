@@ -1,0 +1,38 @@
+In InsertInOrderSpeedTest, I made several tests and received the following results:
+
+Enter # strings to insert into the maps: 10000
+class bstmap.ULLMap: 0.53 sec
+class bstmap.BSTMap: 0.43 sec
+Java's Built-in TreeMap: 0.01 sec
+Java's Built-in HashMap: 0.00 sec
+
+Enter # strings to insert into the maps: 50000
+class bstmap.ULLMap: 11.00 sec
+class bstmap.BSTMap: 7.35 sec
+Java's Built-in TreeMap: 0.03 sec
+Java's Built-in HashMap: 0.01 sec
+
+By contrast, in InsertRandomSpeedTest, with same input amount, the results are:
+
+Enter # strings to insert into the maps: 10000
+class bstmap.ULLMap: 0.46 sec
+class bstmap.BSTMap: 0.01 sec
+Java's Built-in TreeMap: 0.01 sec
+Java's Built-in HashMap: 0.01 sec
+
+Enter # strings to insert into the maps: 50000
+class bstmap.ULLMap: 11.95 sec
+class bstmap.BSTMap: 0.06 sec
+Java's Built-in TreeMap: 0.06 sec
+Java's Built-in HashMap: 0.05 sec
+
+The results show that the time complexity of InsertInOrderSpeedTest is O(nlogn)
+and the time complexity of InsertRandomSpeedTest is O(n). The reason is that in
+InsertInOrderSpeedTest, the input strings are inserted in order, which makes the
+tree unbalanced and the time complexity of insertion is O(nlogn). In contrast,
+in InsertRandomSpeedTest, the input strings are inserted randomly, which makes
+the tree balanced and the time complexity of insertion is O(n).
+
+when it comes to the built-in Java's TreeMap, the insertion speed in both two
+conditions are fast, so the built-in TreeMap is not a BST implemented as we did.
+It turns out that the built-in TreeMap is implemented as a red-black tree.
