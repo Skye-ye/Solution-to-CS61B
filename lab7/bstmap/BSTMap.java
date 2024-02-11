@@ -188,7 +188,6 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
     }
 
     @Override
-    @NonNull
     public Iterator<K> iterator() {
         return keySet().iterator();
     }
