@@ -2,7 +2,7 @@ package deque;
 
 import java.util.Iterator;
 
-public class LinkedListDeque<T> implements Iterable<T>, Deque<T>{
+public class LinkedListDeque<T> implements Iterable<T>, Deque<T> {
     private class Node {
         public T item;
         public Node next;
@@ -156,21 +156,26 @@ public class LinkedListDeque<T> implements Iterable<T>, Deque<T>{
         return false;
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (this == o) {
+        if (o == null) {
+            return false;
+        }
+        if (o == this) {
             return true;
         }
-        if (o instanceof LinkedListDeque otherDeque) {
-            if (otherDeque.size() != this.size()) {
+        if (!(o instanceof LinkedListDeque)) {
+            return false;
+        }
+        LinkedListDeque<?> lld = (LinkedListDeque<?>) o;
+        if (lld.size() != size) {
+            return false;
+        }
+        for (int i = 0; i < size; i++) {
+            if (lld.get(i) != get(i)) {
                 return false;
             }
-            for (T item : this) {
-                if (!otherDeque.contains(item)) {
-                    return false;
-                }
-            }
-            return true;
         }
-        return false;
+        return true;
     }
 }
