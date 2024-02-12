@@ -98,6 +98,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
         return items[(nextFirst + 1 + index) % items.length];
     }
 
+    @Override
     public Iterator<T> iterator() {
         return new ArrayDequeIterator();
     }
@@ -128,15 +129,15 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof ArrayDeque)) {
+        if (!(o instanceof Deque)) {
             return false;
         }
-        ArrayDeque<?> ad = (ArrayDeque<?>) o;
-        if (ad.size() != size) {
-            return false;
-        }
-        for (int i = 0; i < size; i++) {
-            if (!Objects.equals(get(i), ad.get(i))) {
+        Deque<?> other = (Deque<?>) o;
+        if (this.size() != other.size()) return false;
+        Iterator<T> it1 = this.iterator();
+        Iterator<?> it2 = other.iterator();
+        while (it1.hasNext() && it2.hasNext()) {
+            if (!Objects.equals(it1.next(), it2.next())) {
                 return false;
             }
         }
