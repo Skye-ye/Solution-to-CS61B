@@ -1,7 +1,5 @@
 package deque;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import java.util.Iterator;
 
 public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
@@ -108,7 +106,6 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T>{
         return false;
     }
 
-    @NonNull
     public Iterator<T> iterator() {
         return new ArrayDequeIterator();
     }
