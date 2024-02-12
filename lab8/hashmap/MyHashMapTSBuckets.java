@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.TreeSet;
 
 /**
- * Hash Table with Tree Set buckets
+ * Hash Table with Tree Set buckets.
  * Elements of tree sets need to be comparable, so we restrict our map to
  * only allow comparable keys
  *
@@ -25,7 +25,7 @@ public class MyHashMapTSBuckets<K extends Comparable<K>, V> extends MyHashMap<K,
      * Constructor that creates a backing array of initialSize
      * and default load factor
      *
-     * @param initialSize initial size of backing array
+     * @param initialSize initial size of a backing array
      */
     public MyHashMapTSBuckets(int initialSize) {
         super(initialSize);
@@ -35,7 +35,7 @@ public class MyHashMapTSBuckets<K extends Comparable<K>, V> extends MyHashMap<K,
      * Constructor that creates a backing array of initialSize.
      * The load factor (# items / # buckets) should always be <= loadFactor
      *
-     * @param initialSize initial size of backing array
+     * @param initialSize initial size of a backing array
      * @param maxLoad maximum load factor
      */
     public MyHashMapTSBuckets(int initialSize, double maxLoad) {

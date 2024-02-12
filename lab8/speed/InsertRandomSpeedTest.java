@@ -58,7 +58,7 @@ public class InsertRandomSpeedTest {
         String s = "cat";
         for (int i = 0; i < N; i++) {
             s = StringUtils.randomString(L);
-            map61B.put(s, new Integer(i));
+            map61B.put(s, i);
         }
         return sw.elapsedTime();
     }
@@ -72,7 +72,7 @@ public class InsertRandomSpeedTest {
         String s = "cat";
         for (int i = 0; i < N; i++) {
             s = StringUtils.randomString(L);
-            hashMap.put(s, new Integer(i));
+            hashMap.put(s, i);
         }
         return sw.elapsedTime();
     }

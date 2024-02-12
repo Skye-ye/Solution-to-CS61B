@@ -71,9 +71,7 @@ public class StringUtils {
     /** Returns a string of all 'a' of length LEN. */
     private static String allAs(int len) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < len; i++) {
-            sb.append('a');
-        }
+        sb.append("a".repeat(Math.max(0, len)));
         return sb.toString();
     }
 

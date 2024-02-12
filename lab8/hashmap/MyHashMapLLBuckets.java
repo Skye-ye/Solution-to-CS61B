@@ -21,7 +21,7 @@ public class MyHashMapLLBuckets<K, V> extends MyHashMap<K, V> {
      * Constructor that creates a backing array of initialSize
      * and default load factor
      *
-     * @param initialSize initial size of backing array
+     * @param initialSize initial size of a backing array
      */
     public MyHashMapLLBuckets(int initialSize) {
         super(initialSize);
@@ -31,7 +31,7 @@ public class MyHashMapLLBuckets<K, V> extends MyHashMap<K, V> {
      * Constructor that creates a backing array of initialSize.
      * The load factor (# items / # buckets) should always be <= loadFactor
      *
-     * @param initialSize initial size of backing array
+     * @param initialSize initial size of a backing array
      * @param maxLoad maximum load factor
      */
     public MyHashMapLLBuckets(int initialSize, double maxLoad) {
