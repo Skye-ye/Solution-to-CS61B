@@ -125,7 +125,7 @@ public class LinkedListDequeTest {
 
     @Test
     public void constructorAddAndRemoveTest() {
-        LinkedListDeque<Integer> test = new LinkedListDeque<>(12);
+        LinkedListDeque<Integer> test = new LinkedListDeque<>();
         test.addFirst(62);
         test.addFirst(34);
         test.addLast(56);
@@ -135,51 +135,47 @@ public class LinkedListDequeTest {
 
     @Test
     public void printTest() {
-        LinkedListDeque<String> testString = new LinkedListDeque<>("like");
+        LinkedListDeque<String> testString = new LinkedListDeque<>();
         testString.addLast("apples");
         testString.addFirst("I");
         testString.printDeque();
-        LinkedListDeque<Integer> testOneItem = new LinkedListDeque<>(2);
+        LinkedListDeque<Integer> testOneItem = new LinkedListDeque<>();
         testOneItem.printDeque();
         LinkedListDeque<Double> testNoItem = new LinkedListDeque<>();
         testNoItem.printDeque();
     }
 
     @Test
-    public void getTest() {
-        LinkedListDeque<String> testString = new LinkedListDeque<>("like");
-        testString.addLast("apples");
-        testString.addFirst("I");
-        assertEquals("I", testString.get(0));
-        assertEquals("like", testString.get(1));
-        assertEquals("apples", testString.get(2));
-        assertNull(testString.get(3));
-        assertNull(testString.get(-1));
-    }
-
-    @Test
-    public void getRecursiveTest() {
-        LinkedListDeque<String> testString = new LinkedListDeque<>("like");
-        testString.addLast("apples");
-        testString.addFirst("I");
-        assertEquals("I", testString.getRecursive(0));
-        assertEquals("like", testString.getRecursive(1));
-        assertEquals("apples", testString.getRecursive(2));
-        assertNull(testString.getRecursive(3));
-        assertNull(testString.getRecursive(-1));
-    }
-
-    @Test
     public void equalsTest() {
-        LinkedListDeque<String> testString = new LinkedListDeque<>("like");
+        LinkedListDeque<String> testString = new LinkedListDeque<>();
         testString.addLast("apples");
         testString.addFirst("I");
-        LinkedListDeque<String> testString2 = new LinkedListDeque<>("like");
+        LinkedListDeque<String> testString2 = new LinkedListDeque<>();
         testString2.addLast("apples");
         testString2.addFirst("I");
         assertTrue(testString.equals(testString2));
         assertFalse(testString.equals(null));
         assertFalse(testString.equals("fish"));
         assertTrue(testString.equals(testString));
+    }
+
+    @Test
+    public void getTest() {
+        LinkedListDeque<String> testString = new LinkedListDeque<>();
+        testString.addLast("apples");
+        testString.addFirst("I");
+        assertEquals("I", testString.get(0));
+        assertEquals("apples", testString.get(1));
+        assertNull(testString.get(2));
+    }
+
+    @Test
+    public void getRecursiveTest() {
+        LinkedListDeque<String> testString = new LinkedListDeque<>();
+        testString.addLast("apples");
+        testString.addFirst("I");
+        assertEquals("I", testString.getRecursive(0));
+        assertEquals("apples", testString.getRecursive(1));
+        assertNull(testString.getRecursive(2));
     }
 }

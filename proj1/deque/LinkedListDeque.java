@@ -4,9 +4,9 @@ import java.util.Iterator;
 
 public class LinkedListDeque<T> implements Iterable<T>, Deque<T> {
     private class Node {
-        public T item;
-        public Node next;
-        public Node prev;
+        private final T item;
+        private Node next;
+        private Node prev;
 
         public Node(T i, Node n, Node p) {
             item = i;
@@ -23,13 +23,6 @@ public class LinkedListDeque<T> implements Iterable<T>, Deque<T> {
         sentinel.next = sentinel;
         sentinel.prev = sentinel;
         size = 0;
-    }
-
-    public LinkedListDeque(T x) {
-        sentinel = new Node(null, null, null);
-        sentinel.next = new Node(x, sentinel, sentinel);
-        sentinel.prev = sentinel.next;
-        size = 1;
     }
 
     @Override
@@ -145,15 +138,6 @@ public class LinkedListDeque<T> implements Iterable<T>, Deque<T> {
             curr = curr.next;
             return item;
         }
-    }
-
-    public boolean contains(T item) {
-        for (T x : this) {
-            if (x.equals(item)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

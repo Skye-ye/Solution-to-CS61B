@@ -52,7 +52,7 @@ public class ArrayDequeTest {
     }
 
     @Test
-    public void  equalsTest() {
+    public void equalsTest() {
         ArrayDeque<Integer> test1 = new ArrayDeque<>();
         ArrayDeque<Integer> test2 = new ArrayDeque<>();
         for (int i = 0; i < 100; i++) {
