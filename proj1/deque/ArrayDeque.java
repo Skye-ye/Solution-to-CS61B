@@ -61,9 +61,9 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
         }
     }
 
-    private T removeTemplate(int nextFirst) {
-        T temp = items[nextFirst];
-        items[nextFirst] = null;
+    private T removeTemplate(int next) {
+        T temp = items[next];
+        items[next] = null;
         size -= 1;
         if (items.length >= 16 && size < items.length / 4) {
             resize(items.length / 2);
@@ -104,7 +104,7 @@ public class ArrayDeque<T> implements Iterable<T>, Deque<T> {
     private class ArrayDequeIterator implements Iterator<T> {
         private int wizPos;
 
-        public ArrayDequeIterator() {
+        ArrayDequeIterator() {
             wizPos = 0;
         }
 

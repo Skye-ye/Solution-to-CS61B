@@ -10,13 +10,13 @@ public class MaxArrayDeque<T> extends ArrayDeque<T> {
         comparator = c;
     }
 
-    private T maxTemplate(Comparator<T> comparator) {
+    private T maxTemplate(Comparator<T> c) {
         if (isEmpty()) {
             return null;
         }
         T max = get(0);
         for (T item : this) {
-            if (comparator.compare(item, max) > 0) {
+            if (c.compare(item, max) > 0) {
                 max = item;
             }
         }
