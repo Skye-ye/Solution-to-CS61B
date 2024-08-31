@@ -37,7 +37,7 @@ CPATH = "$(LIB):..:$(CLASSPATH):;$(LIB);..;$(CLASSPATH)"
 # All .java files in this directory.
 SRCS := $(wildcard *.java)
 
-.PHONY: default check clean
+.PHONY: default check clean clean_repo
 
 # As a convenience, you can compile a single Java file X.java in this directory
 # with 'make X.class'
@@ -56,6 +56,9 @@ integration:
 # 'make clean' will clean up stuff you can reconstruct.
 clean:
 	$(RM) *~ *.class sentinel
+
+clean_repo:
+	$(RM) -r .gitlet
 
 ### DEPENDENCIES ###
 

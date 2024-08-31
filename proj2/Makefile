@@ -28,7 +28,7 @@ TESTER_FLAGS =
 RMAKE = "$(MAKE)"
 
 # Targets that don't correspond to files, but are to be treated as commands.
-.PHONY: default check clean
+.PHONY: default check clean clean_repo
 
 default:
 	$(RMAKE) -C $(PACKAGE) default
@@ -41,4 +41,7 @@ clean:
 	$(RM) *~
 	$(RMAKE) -C $(PACKAGE) clean
 	$(RMAKE) -C testing clean
+
+clean_repo:
+	$(RM) -r .gitlet
 
