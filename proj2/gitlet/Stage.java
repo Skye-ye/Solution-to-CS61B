@@ -1,21 +1,19 @@
 package gitlet;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 
 import static gitlet.Utils.*;
 
 public class Stage implements Serializable {
     private final HashMap<String, String> stagedFiles;
-    private final List<String> removedFiles;
+    private final HashSet<String> removedFiles;
 
     public Stage() {
         stagedFiles = new HashMap<>();
-        removedFiles = new ArrayList<>();
+        removedFiles = new HashSet<>();
     }
 
     public void add(String fileName) {
@@ -25,6 +23,7 @@ public class Stage implements Serializable {
             System.exit(0);
         }
         stagedFiles.put(fileName, sha1(readContents(file)));
+        removedFiles.remove(fileName);
     }
 
     public void remove(String fileName) {
@@ -33,6 +32,7 @@ public class Stage implements Serializable {
             return;
         }
         stagedFiles.remove(fileName);
+        removedFiles.remove(fileName);
     }
 
     public void clear() {
@@ -40,8 +40,20 @@ public class Stage implements Serializable {
         removedFiles.clear();
     }
 
-    public boolean containsFile(String fileName) {
+    public boolean containsStagedFile(String fileName) {
         return stagedFiles.containsKey(fileName);
+    }
+
+    public boolean containsSameStagedFile(String fileName, String sha1) {
+        return stagedFiles.containsKey(fileName) && stagedFiles.get(fileName).equals(sha1);
+    }
+
+    public boolean containsRemovedFile(String fileName) {
+        return removedFiles.contains(fileName);
+    }
+
+    public boolean containsFile(String fileName) {
+        return stagedFiles.containsKey(fileName) || removedFiles.contains(fileName);
     }
 
     public static Stage fromFile(File fileName) {
@@ -64,7 +76,7 @@ public class Stage implements Serializable {
         removedFiles.add(fileName);
     }
 
-    public List<String> getRemovedFiles() {
+    public HashSet<String> getRemovedFiles() {
         return removedFiles;
     }
 }

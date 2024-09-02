@@ -8,10 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.io.Serializable;
 import java.io.File;
 
-import java.util.Date; // TODO: You'll likely use this in this class
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -80,11 +77,15 @@ public class Commit implements Serializable {
         return blobs;
     }
 
+    public String getBlobHash(String fileName) {
+        return blobs.get(fileName);
+    }
+
     public void changeBlobs(HashMap<String, String> blobs) {
         this.blobs.putAll(blobs);
     }
 
-    public void removeBlobs(List<String> fileNames) {
+    public void removeBlobs(HashSet<String> fileNames) {
         for (String fileName : fileNames) {
             blobs.remove(fileName);
         }
