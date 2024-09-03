@@ -90,6 +90,8 @@ public class Main {
                     repo.reset(args[1]);
                     break;
                 case "merge":
+                    checkArgs(args, 2);
+                    repo.merge(args[1]);
                     break;
                 default:
                     System.out.println("No command with that name exists.");

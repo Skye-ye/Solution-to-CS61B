@@ -74,8 +74,8 @@ public class Commit implements Serializable {
         return blobs.get(fileName);
     }
 
-    public void changeBlobs(HashMap<String, String> blobs) {
-        this.blobs.putAll(blobs);
+    public void changeBlobs(HashMap<String, String> newBlobs) {
+        this.blobs.putAll(newBlobs);
     }
 
     public void removeBlobs(HashSet<String> fileNames) {

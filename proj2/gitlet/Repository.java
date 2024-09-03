@@ -112,7 +112,8 @@ public class Repository {
         checkGitletDir();
 
         Stage stage = Stage.fromFile(STAGING_FILE);
-        if (stage.getStagedFiles().isEmpty() && stage.getRemovedFiles().isEmpty()) {
+        if (stage.getStagedFiles().isEmpty()
+                && stage.getRemovedFiles().isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -141,7 +142,8 @@ public class Repository {
         Stage stage = Stage.fromFile(STAGING_FILE);
         Commit currentCommit = Commit.fromFile(join(COMMITS_DIR,
                 readContentsAsString(HEAD_FILE)));
-        if (!stage.containsStagedFile(fileName) && !currentCommit.containsFile(fileName)) {
+        if (!stage.containsStagedFile(fileName)
+                && !currentCommit.containsFile(fileName)) {
             System.out.println("No reason to remove the file.");
             System.exit(0);
         }
@@ -229,65 +231,38 @@ public class Repository {
     }
 
     public void status() {
-        /* Error checking */
         checkGitletDir();
 
-        /* Print branches */
-        System.out.println("=== Branches ===");
-        List<String> branches = plainFilenamesIn(BRANCHES_DIR);
-        if (branches == null) {
-            return;
-        }
-
-        String currentBranch = readContentsAsString(CURRENT_BRANCH);
-        for (String branch : branches) {
-            if (branch.equals(currentBranch)) {
-                System.out.println("*" + branch);
-            } else {
-                System.out.println(branch);
-            }
-        }
-        System.out.println();
+        printBranches();
 
         Stage stage = Stage.fromFile(STAGING_FILE);
         Commit commit = Commit.fromFile(join(COMMITS_DIR,
                 readContentsAsString(HEAD_FILE)));
         List<String> workingDirectoryFiles = plainFilenamesIn(CWD);
         if (workingDirectoryFiles == null) {
-            return;
+            System.exit(0);
         }
 
-        /* Check files */
         TreeSet<String> stagedFiles = new TreeSet<>();
         TreeSet<String>  removedFiles = new TreeSet<>();
         TreeMap<String, Integer> modifiedFiles = new TreeMap<>();
-        TreeSet<String>  trackedFiles = new TreeSet<>();
-        TreeSet<String>  untrackedFiles = new TreeSet<>();
 
         HashMap<String, String> addedStagedFiles = stage.getStagedFiles();
         HashSet<String> removedStagedFiles = stage.getRemovedFiles();
         HashMap<String, String> commitFiles = commit.getBlobs();
 
-        /* Check files staged for addition */
         for (Map.Entry<String, String> entry : addedStagedFiles.entrySet()) {
             String fileName = entry.getKey();
             File file = join(CWD, fileName);
             if (!file.exists()) {
-                /* Staged for addition, but deleted in the working directory */
                 modifiedFiles.put(fileName, 0);
             } else {
                 String localHash = sha1(readContents(file));
                 if (entry.getValue().equals(localHash)) {
-                    /*
-                     * Staged for addition, but with different contents than
-                     * in the working directory
-                     */
                     stagedFiles.add(fileName);
                 } else {
-                    /* Staged for addition, modified in the working directory */
                     modifiedFiles.put(fileName, 1);
                 }
-                trackedFiles.add(fileName);
             }
         }
 
@@ -296,10 +271,6 @@ public class Repository {
             File file = join(CWD, fileName);
             if (!file.exists()) {
                 if (!removedStagedFiles.contains(fileName)) {
-                    /*
-                     * Not staged for removal, but tracked in the current
-                     * commit and deleted from the working directory
-                     */
                     modifiedFiles.put(fileName, 0);
                 }
             } else {
@@ -307,68 +278,32 @@ public class Repository {
                 if (!entry.getValue().equals(localHash)
                         && !addedStagedFiles.containsKey(fileName)
                         && !removedStagedFiles.contains(fileName)) {
-                    /*
-                     * Tracked in the current commit, changed in the working
-                     * directory, but not staged
-                     */
                     modifiedFiles.put(fileName, 1);
                 }
-                trackedFiles.add(fileName);
             }
         }
 
         for (String fileName : removedStagedFiles) {
             File file = join(CWD, fileName);
-            if (file.exists()) {
-                /*
-                 * have been staged for removal, but then re-created
-                 * without Gitlet’s knowledge
-                 */
-                untrackedFiles.add(fileName);
-            } else {
+            if (!file.exists()) {
                 removedFiles.add(fileName);
             }
         }
 
-        for (String fileName : workingDirectoryFiles) {
-            if (!trackedFiles.contains(fileName)) {
-                untrackedFiles.add(fileName);
-            }
-        }
-
-        /* Print files */
-        System.out.println("=== Staged Files ===");
-        for (String fileName : stagedFiles) {
-            System.out.println(fileName);
-        }
-        System.out.println();
-
-        System.out.println("=== Removed Files ===");
-        for (String fileName : removedFiles) {
-            System.out.println(fileName);
-        }
-        System.out.println();
-
-        System.out.println("=== Modifications Not Staged For Commit ===");
-        for (Map.Entry<String, Integer> entry : modifiedFiles.entrySet()) {
-            String fileName = entry.getKey();
-            int status = entry.getValue();
-            if (status == 1) {
-                System.out.println(fileName + " (modified)");
-            } else {
-                System.out.println(fileName + " (deleted)");
-            }
-        }
-        System.out.println();
+        printStatus(stagedFiles, removedFiles, modifiedFiles);
 
         System.out.println("=== Untracked Files ===");
-        for (String fileName : untrackedFiles) {
-            System.out.println(fileName);
+        for (String fileName : workingDirectoryFiles) {
+            if ((!commitFiles.containsKey(fileName)
+                    && !addedStagedFiles.containsKey(fileName))
+                    || removedStagedFiles.contains(fileName)) {
+                System.out.println(fileName);
+            }
         }
         System.out.println();
     }
 
-    public void checkoutFileFromCommit(String hash, String fileName) {
+        public void checkoutFileFromCommit(String hash, String fileName) {
         /* Error checking */
         checkGitletDir();
 
@@ -477,14 +412,61 @@ public class Repository {
         writeContents(HEAD_FILE, fullHash);
     }
 
-    private void checkGitletDir() {
+    public void merge(String branchName) throws IOException {
+        /* Error checking */
+        checkGitletDir();
+
+        /* Check staging area */
+        Stage stage = Stage.fromFile(STAGING_FILE);
+        if (!stage.getStagedFiles().isEmpty()
+                || !stage.getRemovedFiles().isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+
+        /* Search for the branch */
+        File branchFile = join(BRANCHES_DIR, branchName);
+        if (!branchFile.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        /* Check if the branch is the current branch */
+        String currentBranch = readContentsAsString(CURRENT_BRANCH);
+        if (branchName.equals(currentBranch)) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
+        /* Get the split point */
+        String currentHash = readContentsAsString(HEAD_FILE);
+        String givenHash = readContentsAsString(branchFile);
+        String splitHash = findSplitPoint(currentHash, givenHash);
+
+        /* Check if the split point is the same as the given branch */
+        if (splitHash.equals(givenHash)) {
+            System.out.println("Given branch is an ancestor of "
+                    + "the current branch.");
+            System.exit(0);
+        }
+
+        /* Check if the split point is the same as the current branch */
+        if (splitHash.equals(currentHash)) {
+            checkoutBranch(branchName);
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+    }
+
+    private static void checkGitletDir() {
         if (!GITLET_DIR.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
             System.exit(0);
         }
     }
 
-    private void submitCommit(Commit commit, String branch) throws IOException {
+    private static void submitCommit(Commit commit, String branch)
+            throws IOException {
         String hash = sha1(serialize(commit));
         File commitFile = join(COMMITS_DIR, hash);
         commitFile.createNewFile();
@@ -498,7 +480,53 @@ public class Repository {
         writeContents(CURRENT_BRANCH, branch);
     }
 
-    private String findFullCommitHash(String hash) {
+    private static void printBranches() {
+        System.out.println("=== Branches ===");
+        List<String> branches = plainFilenamesIn(BRANCHES_DIR);
+        if (branches == null) {
+            System.exit(0);
+        }
+
+        String currentBranch = readContentsAsString(CURRENT_BRANCH);
+        for (String branch : branches) {
+            if (branch.equals(currentBranch)) {
+                System.out.println("*" + branch);
+            } else {
+                System.out.println(branch);
+            }
+        }
+        System.out.println();
+    }
+
+    private static void printStatus(TreeSet<String> stagedFiles
+            , TreeSet<String> removedFiles
+            , TreeMap<String, Integer> modifiedFiles) {
+        System.out.println("=== Staged Files ===");
+        for (String fileName : stagedFiles) {
+            System.out.println(fileName);
+        }
+        System.out.println();
+
+        System.out.println("=== Removed Files ===");
+        for (String fileName : removedFiles) {
+            System.out.println(fileName);
+        }
+        System.out.println();
+
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        for (Map.Entry<String, Integer> entry : modifiedFiles.entrySet()) {
+            String fileName = entry.getKey();
+            int status = entry.getValue();
+            if (status == 1) {
+                System.out.println(fileName + " (modified)");
+            } else {
+                System.out.println(fileName + " (deleted)");
+            }
+        }
+        System.out.println();
+    }
+
+    private static String findFullCommitHash(String hash) {
         List<String> files = plainFilenamesIn(COMMITS_DIR);
         List<String> matchedFiles = new ArrayList<>();
 
@@ -523,7 +551,7 @@ public class Repository {
         return matchedFiles.get(0);
     }
 
-    private void checkoutCommit(String targetHash) {
+    private static void checkoutCommit(String targetHash) {
         /* Read the current commit */
         String currentHash = readContentsAsString(HEAD_FILE);
         Commit currentCommit = Commit.fromFile(join(COMMITS_DIR, currentHash));
@@ -570,5 +598,25 @@ public class Repository {
         /* Clear the staging area */
         stage.clear();
         writeObject(STAGING_FILE, stage);
+    }
+
+    private static String findSplitPoint(String hash1, String hash2) {
+        HashSet<String> ancestors = new HashSet<>();
+
+        /* Find all the ancestors of hash1 */
+        while (hash1 != null) {
+            ancestors.add(hash1);
+            hash1 = Commit.fromFile(join(COMMITS_DIR, hash1)).getParent();
+        }
+
+        /* Find the first common ancestor of hash1 and hash2*/
+        while (hash2 != null) {
+            if (ancestors.contains(hash2)) {
+                return hash2;
+            }
+            hash2 = Commit.fromFile(join(COMMITS_DIR, hash2)).getParent();
+        }
+
+        return null;
     }
 }
