@@ -42,8 +42,8 @@ public class Repository {
 
     public void init() throws IOException {
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already " +
-                    "exists in the current directory.");
+            System.out.println("A Gitlet version-control system already "
+                    + "exists in the current directory.");
             return;
         }
         /* Create the .gitlet directory and its subdirectories */
@@ -89,8 +89,8 @@ public class Repository {
                 /* Remove the previous version of the file from the blobs directory */
                 File blobFile = join(BLOBS_DIR, oldHash);
                 if (!blobFile.exists()) {
-                    System.out.println("File in previous version does not " +
-                            "exist.");
+                    System.out.println("File in previous version does not "
+                            + "exist.");
                     System.exit(0);
                 }
                 blobFile.delete();
@@ -170,8 +170,8 @@ public class Repository {
             System.out.println("===");
             System.out.println("commit " + hash);
             if (commit.getSecondParent() != null) {
-                System.out.println("Merge: " + commit.getParent().substring(0
-                        , 7) + " " + commit.getSecondParent().substring(0, 7));
+                System.out.println("Merge: " + commit.getParent().substring(0,
+                        7) + " " + commit.getSecondParent().substring(0, 7));
             }
             System.out.println("Date: " + commit.getTime());
             System.out.println(commit.getMessage());
@@ -195,8 +195,8 @@ public class Repository {
             System.out.println("===");
             System.out.println("commit " + commitFile.getName());
             if (commit.getSecondParent() != null) {
-                System.out.println("Merge: " + commit.getParent().substring(0
-                        , 7) + " " + commit.getSecondParent().substring(0, 7));
+                System.out.println("Merge: " + commit.getParent().substring(0,
+                        7) + " " + commit.getSecondParent().substring(0, 7));
             }
             System.out.println("Date: " + commit.getTime());
             System.out.println(commit.getMessage());
@@ -304,9 +304,9 @@ public class Repository {
                 }
             } else {
                 String localHash = sha1(readContents(file));
-                if (!entry.getValue().equals(localHash) &&
-                        !addedStagedFiles.containsKey(fileName) &&
-                        !removedStagedFiles.contains(fileName)) {
+                if (!entry.getValue().equals(localHash)
+                        && !addedStagedFiles.containsKey(fileName)
+                        && !removedStagedFiles.contains(fileName)) {
                     /*
                      * Tracked in the current commit, changed in the working
                      * directory, but not staged
@@ -540,11 +540,11 @@ public class Repository {
             return;
         }
         for (String fileName : workingDirectoryFiles) {
-            if ((!currentCommit.containsFile(fileName) &&
-                    !stage.containsStagedFile(fileName)) ||
-                    stage.containsRemovedFile(fileName)) {
-                System.out.println("There is an untracked file in the way; " +
-                        "delete it or add it first.");
+            if ((!currentCommit.containsFile(fileName)
+                    && !stage.containsStagedFile(fileName))
+                    || stage.containsRemovedFile(fileName)) {
+                System.out.println("There is an untracked file in the way; "
+                        + "delete it, or add and commit it first.");
                 System.exit(0);
             }
         }
@@ -558,8 +558,8 @@ public class Repository {
         }
 
         /* Checkout files from the target commit */
-        for (Map.Entry<String, String> entry :
-                targetCommit.getBlobs().entrySet()) {
+        for (Map.Entry<String, String> entry
+                : targetCommit.getBlobs().entrySet()) {
             String fileName = entry.getKey();
             String blobHash = entry.getValue();
             File blobFile = join(BLOBS_DIR, blobHash);
