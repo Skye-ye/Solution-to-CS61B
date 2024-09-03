@@ -417,12 +417,7 @@ public class Repository {
         checkGitletDir();
 
         /* Check staging area */
-        Stage stage = Stage.fromFile(STAGING_FILE);
-        if (!stage.getStagedFiles().isEmpty()
-                || !stage.getRemovedFiles().isEmpty()) {
-            System.out.println("You have uncommitted changes.");
-            System.exit(0);
-        }
+        checkBlankStagingArea();
 
         /* Search for the branch */
         File branchFile = join(BRANCHES_DIR, branchName);
@@ -476,83 +471,12 @@ public class Repository {
 
         boolean conflict = false;
 
-        /* Check files in given branch */
-        for (Map.Entry<String, String> entry : givenBlobs.entrySet()) {
-            String fileName = entry.getKey();
-            String givenFileHash = entry.getValue();
-            if (lockedFiles.contains(fileName)) {
-                continue;
-            }
+        conflict = checkGivenBranch(givenBlobs,
+                lockedFiles, splitBlobs, currentBlobs,
+                givenCommitHash, newBlobs, conflict, workingDirectoryFiles);
 
-            if (splitBlobs.containsKey(fileName)
-                    && currentBlobs.containsKey(fileName)) {
-                String splitFileHash = splitBlobs.get(fileName);
-                String currentFileHash = currentBlobs.get(fileName);
-                if (!Objects.equals(splitFileHash, givenCommitHash)
-                        && Objects.equals(splitFileHash, currentFileHash)) {
-                    writeContents(join(CWD, fileName),
-                            readContents(join(BLOBS_DIR, givenFileHash)));
-                    newBlobs.put(fileName, givenFileHash);
-                } else if (!Objects.equals(splitFileHash, givenFileHash)
-                        && !Objects.equals(splitFileHash, currentFileHash)
-                        && !Objects.equals(currentFileHash, givenFileHash)) {
-                    String hash = dealConflict(fileName, currentFileHash,
-                            givenFileHash);
-                    newBlobs.put(fileName, hash);
-                    conflict = true;
-                }
-            } else if (!splitBlobs.containsKey(fileName)
-                    && currentBlobs.containsKey(fileName)) {
-                String currentFileHash = currentBlobs.get(fileName);
-                if (!Objects.equals(currentFileHash, givenFileHash)) {
-                    String hash = dealConflict(fileName, currentFileHash,
-                            givenFileHash);
-                    newBlobs.put(fileName, hash);
-                    conflict = true;
-                }
-            } else if (!splitBlobs.containsKey(fileName)
-                    && !currentBlobs.containsKey(fileName)) {
-                if (workingDirectoryFiles.contains(fileName)) {
-                    System.out.println("There is an untracked file in the way; "
-                            + "delete it, or add and commit it first.");
-                    System.exit(0);
-                }
-                writeContents(join(CWD, fileName),
-                        readContents(join(BLOBS_DIR, givenFileHash)));
-                newBlobs.put(fileName, givenFileHash);
-            } else {
-                String splitFileHash = splitBlobs.get(fileName);
-                if (!Objects.equals(splitFileHash, givenFileHash)) {
-                    String hash = dealConflict(fileName, null, givenFileHash);
-                    newBlobs.put(fileName, hash);
-                    conflict = true;
-                }
-            }
-            lockedFiles.add(fileName);
-        }
-
-        /* Check files in current branch */
-        for (Map.Entry<String, String> entry : currentBlobs.entrySet()) {
-            String fileName = entry.getKey();
-            String currentFileHash = entry.getValue();
-            if (lockedFiles.contains(fileName)) {
-                continue;
-            }
-
-            if (splitBlobs.containsKey(fileName) && !givenBlobs.containsKey(fileName)) {
-                String splitFileHash = splitBlobs.get(fileName);
-                if (Objects.equals(splitFileHash, currentFileHash)) {
-                    File file = join(CWD, fileName);
-                    file.delete();
-                    newBlobs.remove(fileName);
-                } else {
-                    String hash = dealConflict(fileName, currentFileHash, null);
-                    newBlobs.put(fileName, hash);
-                    conflict = true;
-                }
-            }
-            lockedFiles.add(fileName);
-        }
+        conflict = checkCurrentBranch(currentBlobs, lockedFiles, splitBlobs,
+                givenBlobs, newBlobs, conflict);
 
         /* Create the merge commit */
         Commit commit = new Commit("Merged " + branchName + " into "
@@ -708,6 +632,15 @@ public class Repository {
         writeObject(STAGING_FILE, stage);
     }
 
+    private static void checkBlankStagingArea() {
+        Stage stage = Stage.fromFile(STAGING_FILE);
+        if (!stage.getStagedFiles().isEmpty()
+                || !stage.getRemovedFiles().isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+    }
+
     private static String findSplitPoint(String hash1, String hash2) {
         HashSet<String> ancestors1 = new HashSet<>();
         HashSet<String> ancestors2 = new HashSet<>();
@@ -730,8 +663,12 @@ public class Repository {
                 Commit commit = Commit.fromFile(join(COMMITS_DIR, current));
                 String parent = commit.getFirstParent();
                 String secondParent = commit.getSecondParent();
-                if (parent != null) queue1.offer(parent);
-                if (secondParent != null) queue1.offer(secondParent);
+                if (parent != null) {
+                    queue1.offer(parent);
+                }
+                if (secondParent != null) {
+                    queue1.offer(secondParent);
+                }
             }
 
             if (!queue2.isEmpty()) {
@@ -745,8 +682,12 @@ public class Repository {
                 Commit commit = Commit.fromFile(join(COMMITS_DIR, current));
                 String parent = commit.getFirstParent();
                 String secondParent = commit.getSecondParent();
-                if (parent != null) queue2.offer(parent);
-                if (secondParent != null) queue2.offer(secondParent);
+                if (parent != null) {
+                    queue2.offer(parent);
+                }
+                if (secondParent != null) {
+                    queue2.offer(secondParent);
+                }
             }
         }
 
@@ -780,5 +721,109 @@ public class Repository {
         File blobFile = join(BLOBS_DIR, hash);
         writeContents(blobFile, conflictContent);
         return hash;
+    }
+
+    private static boolean checkGivenBranch(
+            HashMap<String, String> givenBlobs,
+            HashSet<String> lockedFiles,
+            HashMap<String, String> splitBlobs,
+            HashMap<String, String> currentBlobs,
+            String givenCommitHash,
+            HashMap<String, String> newBlobs,
+            boolean conflict,
+            List<String> workingDirectoryFiles) {
+
+        /* Check files in given branch */
+        for (Map.Entry<String, String> entry : givenBlobs.entrySet()) {
+            String fileName = entry.getKey();
+            String givenFileHash = entry.getValue();
+            if (lockedFiles.contains(fileName)) {
+                continue;
+            }
+
+            if (splitBlobs.containsKey(fileName)
+                    && currentBlobs.containsKey(fileName)) {
+                String splitFileHash = splitBlobs.get(fileName);
+                String currentFileHash = currentBlobs.get(fileName);
+
+                if (!Objects.equals(splitFileHash, givenCommitHash)
+                        && Objects.equals(splitFileHash, currentFileHash)) {
+                    writeContents(join(CWD, fileName),
+                            readContents(join(BLOBS_DIR, givenFileHash)));
+                    newBlobs.put(fileName, givenFileHash);
+                } else if (!Objects.equals(splitFileHash, givenFileHash)
+                        && !Objects.equals(splitFileHash, currentFileHash)
+                        && !Objects.equals(currentFileHash, givenFileHash)) {
+                    String hash = dealConflict(fileName, currentFileHash,
+                            givenFileHash);
+                    newBlobs.put(fileName, hash);
+                    conflict = true;
+                }
+            } else if (!splitBlobs.containsKey(fileName)
+                    && currentBlobs.containsKey(fileName)) {
+                String currentFileHash = currentBlobs.get(fileName);
+
+                if (!Objects.equals(currentFileHash, givenFileHash)) {
+                    String hash = dealConflict(fileName, currentFileHash,
+                            givenFileHash);
+                    newBlobs.put(fileName, hash);
+                    conflict = true;
+                }
+            } else if (!splitBlobs.containsKey(fileName)
+                    && !currentBlobs.containsKey(fileName)) {
+
+                if (workingDirectoryFiles.contains(fileName)) {
+                    System.out.println("There is an untracked file in the way; "
+                            + "delete it, or add and commit it first.");
+                    System.exit(0);
+                }
+
+                writeContents(join(CWD, fileName),
+                        readContents(join(BLOBS_DIR, givenFileHash)));
+                newBlobs.put(fileName, givenFileHash);
+            } else {
+                String splitFileHash = splitBlobs.get(fileName);
+
+                if (!Objects.equals(splitFileHash, givenFileHash)) {
+                    String hash = dealConflict(fileName, null, givenFileHash);
+                    newBlobs.put(fileName, hash);
+                    conflict = true;
+                }
+            }
+            lockedFiles.add(fileName);
+        }
+        return conflict;
+    }
+
+    private static boolean checkCurrentBranch(
+            HashMap<String, String> currentBlobs,
+            HashSet<String> lockedFiles,
+            HashMap<String, String> splitBlobs,
+            HashMap<String, String> givenBlobs,
+            HashMap<String, String> newBlobs, boolean conflict) {
+
+        /* Check files in current branch */
+        for (Map.Entry<String, String> entry : currentBlobs.entrySet()) {
+            String fileName = entry.getKey();
+            String currentFileHash = entry.getValue();
+            if (lockedFiles.contains(fileName)) {
+                continue;
+            }
+
+            if (splitBlobs.containsKey(fileName) && !givenBlobs.containsKey(fileName)) {
+                String splitFileHash = splitBlobs.get(fileName);
+                if (Objects.equals(splitFileHash, currentFileHash)) {
+                    File file = join(CWD, fileName);
+                    file.delete();
+                    newBlobs.remove(fileName);
+                } else {
+                    String hash = dealConflict(fileName, currentFileHash, null);
+                    newBlobs.put(fileName, hash);
+                    conflict = true;
+                }
+            }
+            lockedFiles.add(fileName);
+        }
+        return conflict;
     }
 }
