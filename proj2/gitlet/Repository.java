@@ -7,7 +7,6 @@ import java.util.*;
 
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
 
 /** Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -17,7 +16,6 @@ import static gitlet.Utils.*;
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
      *
      * List all instance variables of the Repository class here with a useful
      * comment above them describing what that variable represents and how that
@@ -43,8 +41,6 @@ public class Repository {
     /** The current branch. */
     private String currentBranch = DEFAULT_BRANCH;
 
-
-    /* TODO: fill in the rest of this class. */
 
     public void init() throws IOException {
         if (GITLET_DIR.exists()) {
@@ -87,7 +83,7 @@ public class Repository {
         if (currentCommit.containsSameFile(fileName, hash)) {
             if (stage.containsStagedFile(fileName)) {
                 String oldHash = stage.getHash(fileName);
-                stage.remove(fileName);
+                stage.removeStagedFile(fileName);
 
                 /* Remove the previous version of the file from the blobs directory */
                 File blobFile = join(BLOBS_DIR, oldHash);
@@ -96,6 +92,8 @@ public class Repository {
                     System.exit(0);
                 }
                 blobFile.delete();
+            } else if (stage.containsRemovedFile(fileName)) {
+                stage.resetRemovedFile(fileName);
             }
         } else {
             stage.add(fileName);
@@ -112,7 +110,7 @@ public class Repository {
         checkGitletDir();
 
         Stage stage = Stage.fromFile(STAGING_FILE);
-        if (stage.getStagedFiles().isEmpty()) {
+        if (stage.getStagedFiles().isEmpty() && stage.getRemovedFiles().isEmpty()) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -144,7 +142,7 @@ public class Repository {
         }
 
         if (stage.containsStagedFile(fileName)) {
-            stage.remove(fileName);
+            stage.removeStagedFile(fileName);
         }
 
         if (currentCommit.containsFile(fileName)) {

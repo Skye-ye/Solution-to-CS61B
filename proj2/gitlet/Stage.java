@@ -26,12 +26,19 @@ public class Stage implements Serializable {
         removedFiles.remove(fileName);
     }
 
-    public void remove(String fileName) {
+    public void removeStagedFile(String fileName) {
         if (!stagedFiles.containsKey(fileName)) {
             System.out.println("No reason to remove the file.");
-            return;
+            System.exit(0);
         }
         stagedFiles.remove(fileName);
+    }
+
+    public void resetRemovedFile(String fileName) {
+        if (!removedFiles.contains(fileName)) {
+            System.out.println("No reason to remove the file.");
+            System.exit(0);
+        }
         removedFiles.remove(fileName);
     }
 

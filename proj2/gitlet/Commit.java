@@ -3,7 +3,6 @@ package gitlet;
 // TODO: any imports you need here
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.io.Serializable;
 import java.io.File;
@@ -20,7 +19,6 @@ import static gitlet.Utils.*;
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
      *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
@@ -38,7 +36,6 @@ public class Commit implements Serializable {
     /** The blobs of this Commit. */
     private final HashMap<String, String> blobs;
 
-    /* TODO: fill in the rest of this class. */
     public Commit(String message, String parent, HashMap<String, String> blobs) {
         this.message = message;
         this.parent = parent;

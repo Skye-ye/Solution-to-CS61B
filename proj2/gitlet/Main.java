@@ -30,7 +30,7 @@ public class Main {
                     repo.add(args[1]);
                     break;
                 case "commit":
-                    if (args.length < 2) {
+                    if (args.length < 2 || args[1].isEmpty()) {
                         System.out.println("Please enter a commit message.");
                         System.exit(0);
                     }
