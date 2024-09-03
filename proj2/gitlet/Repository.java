@@ -439,22 +439,100 @@ public class Repository {
         }
 
         /* Get the split point */
-        String currentHash = readContentsAsString(HEAD_FILE);
-        String givenHash = readContentsAsString(branchFile);
-        String splitHash = findSplitPoint(currentHash, givenHash);
+        String currentCommitHash = readContentsAsString(HEAD_FILE);
+        String givenCommitHash = readContentsAsString(branchFile);
+        String splitCommitHash = findSplitPoint(currentCommitHash,
+                givenCommitHash);
 
         /* Check if the split point is the same as the given branch */
-        if (splitHash.equals(givenHash)) {
+        if (splitCommitHash.equals(givenCommitHash)) {
             System.out.println("Given branch is an ancestor of "
                     + "the current branch.");
             System.exit(0);
         }
 
         /* Check if the split point is the same as the current branch */
-        if (splitHash.equals(currentHash)) {
+        if (splitCommitHash.equals(currentCommitHash)) {
             checkoutBranch(branchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
+        }
+
+        Commit currentCommit = Commit.fromFile(join(COMMITS_DIR, currentCommitHash));
+        Commit givenCommit = Commit.fromFile(join(COMMITS_DIR, givenCommitHash));
+        Commit splitCommit = Commit.fromFile(join(COMMITS_DIR, splitCommitHash));
+
+        HashMap<String, String> currentBlobs = currentCommit.getBlobs();
+        HashMap<String, String> givenBlobs = givenCommit.getBlobs();
+        HashMap<String, String> splitBlobs = splitCommit.getBlobs();
+
+        HashSet<String> lockedFiles = new HashSet<>();
+        HashMap<String, String> newBlobs = new HashMap<>(currentBlobs);
+
+        boolean conflict = false;
+
+        /* Check files in given branch */
+        for (Map.Entry<String, String> entry : givenBlobs.entrySet()) {
+            String fileName = entry.getKey();
+            String givenFileHash = entry.getValue();
+            if (lockedFiles.contains(fileName)) continue;
+
+            if (splitBlobs.containsKey(fileName)
+                    && currentBlobs.containsKey(fileName)) {
+                String splitFileHash = splitBlobs.get(fileName);
+                String currentFileHash = currentBlobs.get(fileName);
+                if (!Objects.equals(splitFileHash, givenCommitHash)
+                        && Objects.equals(splitFileHash, currentFileHash)) {
+                    checkoutFileFromCommit(givenCommitHash, fileName);
+                    stage.add(fileName);
+                } else if (!Objects.equals(splitFileHash, givenFileHash)
+                        && !Objects.equals(splitFileHash, currentFileHash)
+                        && !Objects.equals(currentFileHash, givenFileHash)) {
+                    dealConflict(fileName, currentFileHash, givenFileHash);
+                    conflict = true;
+                }
+            } else if (!splitBlobs.containsKey(fileName)
+                    && currentBlobs.containsKey(fileName)) {
+                String currentFileHash = currentBlobs.get(fileName);
+                if (!Objects.equals(currentFileHash, givenFileHash)) {
+                    dealConflict(fileName, currentFileHash, givenFileHash);
+                    conflict = true;
+                }
+            } else if (!splitBlobs.containsKey(fileName)
+                    && !currentBlobs.containsKey(fileName)) {
+                checkoutFileFromCommit(givenCommitHash, fileName);
+                stage.add(fileName);
+            }
+            lockedFiles.add(fileName);
+        }
+
+        /* Check files in current branch */
+        for (Map.Entry<String, String> entry : currentBlobs.entrySet()) {
+            String fileName = entry.getKey();
+            String currentFileHash = entry.getValue();
+            if (lockedFiles.contains(fileName)) continue;
+
+            if (splitBlobs.containsKey(fileName) && !givenBlobs.containsKey(fileName)) {
+                String splitFileHash = splitBlobs.get(fileName);
+                if (Objects.equals(splitFileHash, currentFileHash)) {
+                    File file = join(CWD, fileName);
+                    file.delete();
+                    newBlobs.remove(fileName);
+                }
+            }
+            lockedFiles.add(fileName);
+        }
+
+        /* Create the merge commit */
+        Commit commit = new Commit("Merged " + branchName + " into "
+                + currentBranch + ".", currentCommitHash, newBlobs);
+        commit.setSecondParent(givenCommitHash);
+        submitCommit(commit, currentBranch);
+        writeObject(STAGING_FILE, stage);
+
+        /* Print whether there is a conflict */
+        if (conflict) {
+            System.out.println("Encountered a merge conflict.");
         }
     }
 
@@ -618,5 +696,20 @@ public class Repository {
         }
 
         return null;
+    }
+
+    private static void dealConflict(String fileName, String currentFileHash,
+                                     String givenFileHash) {
+        File currentFile = join(BLOBS_DIR, currentFileHash);
+        File givenFile = join(BLOBS_DIR, givenFileHash);
+        File file = join(CWD, fileName);
+
+        String currentContent = readContentsAsString(currentFile);
+        String givenContent = readContentsAsString(givenFile);
+
+        String conflictContent = "<<<<<<< HEAD\n" + currentContent
+                + "=======\n" + givenContent + ">>>>>>>\n";
+
+        writeContents(file, conflictContent);
     }
 }
