@@ -466,6 +466,11 @@ public class Repository {
         HashMap<String, String> givenBlobs = givenCommit.getBlobs();
         HashMap<String, String> splitBlobs = splitCommit.getBlobs();
 
+        List<String> workingDirectoryFiles = plainFilenamesIn(CWD);
+        if (workingDirectoryFiles == null) {
+            System.exit(0);
+        }
+
         HashSet<String> lockedFiles = new HashSet<>();
         HashMap<String, String> newBlobs = new HashMap<>(currentBlobs);
 
@@ -507,9 +512,21 @@ public class Repository {
                 }
             } else if (!splitBlobs.containsKey(fileName)
                     && !currentBlobs.containsKey(fileName)) {
+                if (workingDirectoryFiles.contains(fileName)) {
+                    System.out.println("There is an untracked file in the way; "
+                            + "delete it, or add and commit it first.");
+                    System.exit(0);
+                }
                 writeContents(join(CWD, fileName),
                         readContents(join(BLOBS_DIR, givenFileHash)));
                 newBlobs.put(fileName, givenFileHash);
+            } else {
+                String splitFileHash = splitBlobs.get(fileName);
+                if (!Objects.equals(splitFileHash, givenFileHash)) {
+                    String hash = dealConflict(fileName, null, givenFileHash);
+                    newBlobs.put(fileName, hash);
+                    conflict = true;
+                }
             }
             lockedFiles.add(fileName);
         }
@@ -528,6 +545,10 @@ public class Repository {
                     File file = join(CWD, fileName);
                     file.delete();
                     newBlobs.remove(fileName);
+                } else {
+                    String hash = dealConflict(fileName, currentFileHash, null);
+                    newBlobs.put(fileName, hash);
+                    conflict = true;
                 }
             }
             lockedFiles.add(fileName);
@@ -709,12 +730,21 @@ public class Repository {
 
     private static String dealConflict(String fileName, String currentFileHash,
                                      String givenFileHash) {
-        File currentFile = join(BLOBS_DIR, currentFileHash);
-        File givenFile = join(BLOBS_DIR, givenFileHash);
         File file = join(CWD, fileName);
+        String currentContent, givenContent;
 
-        String currentContent = readContentsAsString(currentFile);
-        String givenContent = readContentsAsString(givenFile);
+        if (currentFileHash != null) {
+            currentContent = readContentsAsString(join(BLOBS_DIR,
+                    currentFileHash));
+        } else {
+            currentContent = "";
+        }
+        if (givenFileHash != null) {
+            givenContent = readContentsAsString(join(BLOBS_DIR,
+                    givenFileHash));
+        } else {
+            givenContent = "";
+        }
 
         String conflictContent = "<<<<<<< HEAD\n" + currentContent
                 + "=======\n" + givenContent + ">>>>>>>\n";
