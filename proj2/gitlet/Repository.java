@@ -32,14 +32,14 @@ public class Repository {
     public static final File COMMITS_DIR = join(GITLET_DIR, "objects", "commits");
     /** The branches' directory. */
     public static final File BRANCHES_DIR = join(GITLET_DIR, "heads");
+    /** The current branch. */
+    public static final File CURRENT_BRANCH = join(GITLET_DIR, "current");
     /** The staging file. */
     public static final File STAGING_FILE = join(GITLET_DIR, "staging");
     /** The head file. */
     public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
     /** Default branch. */
     public static final String DEFAULT_BRANCH = "master";
-    /** The current branch. */
-    private String currentBranch = DEFAULT_BRANCH;
 
 
     public void init() throws IOException {
@@ -52,6 +52,7 @@ public class Repository {
         BLOBS_DIR.mkdirs();
         COMMITS_DIR.mkdirs();
         BRANCHES_DIR.mkdirs();
+        CURRENT_BRANCH.createNewFile();
         STAGING_FILE.createNewFile();
         HEAD_FILE.createNewFile();
 
@@ -123,6 +124,7 @@ public class Repository {
         newCommit.removeBlobs(stage.getRemovedFiles());
 
         /* Submit the commit */
+        String currentBranch = readContentsAsString(CURRENT_BRANCH);
         submitCommit(newCommit, currentBranch);
 
         /* Clear the staging area */
@@ -231,6 +233,8 @@ public class Repository {
         if (branches == null) {
             return;
         }
+
+        String currentBranch = readContentsAsString(CURRENT_BRANCH);
         for (String branch : branches) {
             if (branch.equals(currentBranch)) {
                 System.out.println("*" + branch);
@@ -386,6 +390,7 @@ public class Repository {
         }
 
         /* Check if the branch is the current branch */
+        String currentBranch = readContentsAsString(CURRENT_BRANCH);
         if (branch.equals(currentBranch)) {
             System.out.println("No need to checkout the current branch.");
             System.exit(0);
@@ -396,7 +401,7 @@ public class Repository {
         checkoutCommit(targetHash);
 
         /* Update the current branch */
-        currentBranch = branch;
+        writeContents(CURRENT_BRANCH, branch);
         writeContents(HEAD_FILE, targetHash);
     }
 
@@ -427,6 +432,7 @@ public class Repository {
         }
 
         /* Check if the branch is the current branch */
+        String currentBranch = readContentsAsString(CURRENT_BRANCH);
         if (branchName.equals(currentBranch)) {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
@@ -447,6 +453,7 @@ public class Repository {
         checkoutCommit(fullHash);
 
         /* Update the current branch */
+        String currentBranch = readContentsAsString(CURRENT_BRANCH);
         writeContents(join(BRANCHES_DIR, currentBranch), fullHash);
 
         /* Update the head file */
@@ -470,6 +477,8 @@ public class Repository {
 
         File branchFile = join(BRANCHES_DIR, branch);
         writeContents(branchFile, hash);
+
+        writeContents(CURRENT_BRANCH, branch);
     }
 
     private String findFullCommitHash(String hash) {
