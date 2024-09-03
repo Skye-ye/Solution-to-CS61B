@@ -9,9 +9,6 @@ import static gitlet.Utils.*;
 
 
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
  *  @author Skye-ye
  */
 public class Repository {
@@ -29,7 +26,8 @@ public class Repository {
     /** The blobs' directory. */
     public static final File BLOBS_DIR = join(GITLET_DIR, "objects", "blobs");
     /** The commits' directory. */
-    public static final File COMMITS_DIR = join(GITLET_DIR, "objects", "commits");
+    public static final File COMMITS_DIR = join(GITLET_DIR, "objects",
+            "commits");
     /** The branches' directory. */
     public static final File BRANCHES_DIR = join(GITLET_DIR, "heads");
     /** The current branch. */
@@ -44,7 +42,8 @@ public class Repository {
 
     public void init() throws IOException {
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            System.out.println("A Gitlet version-control system already " +
+                    "exists in the current directory.");
             return;
         }
         /* Create the .gitlet directory and its subdirectories */
@@ -80,7 +79,8 @@ public class Repository {
         String hash = sha1(readContents(file));
 
         /* Search files in current commit */
-        Commit currentCommit = Commit.fromFile(join(COMMITS_DIR, readContentsAsString(HEAD_FILE)));
+        Commit currentCommit = Commit.fromFile(join(COMMITS_DIR,
+                readContentsAsString(HEAD_FILE)));
         if (currentCommit.containsSameFile(fileName, hash)) {
             if (stage.containsStagedFile(fileName)) {
                 String oldHash = stage.getHash(fileName);
@@ -89,7 +89,8 @@ public class Repository {
                 /* Remove the previous version of the file from the blobs directory */
                 File blobFile = join(BLOBS_DIR, oldHash);
                 if (!blobFile.exists()) {
-                    System.out.println("File in previous version does not exist.");
+                    System.out.println("File in previous version does not " +
+                            "exist.");
                     System.exit(0);
                 }
                 blobFile.delete();
@@ -119,7 +120,8 @@ public class Repository {
         /* Create the commit */
         String currentHash = readContentsAsString(HEAD_FILE);
         Commit currentCommit = Commit.fromFile(join(COMMITS_DIR, currentHash));
-        Commit newCommit = new Commit(message, currentHash, currentCommit.getBlobs());
+        Commit newCommit = new Commit(message, currentHash,
+                currentCommit.getBlobs());
         newCommit.changeBlobs(stage.getStagedFiles());
         newCommit.removeBlobs(stage.getRemovedFiles());
 
@@ -137,7 +139,8 @@ public class Repository {
         checkGitletDir();
 
         Stage stage = Stage.fromFile(STAGING_FILE);
-        Commit currentCommit = Commit.fromFile(join(COMMITS_DIR, readContentsAsString(HEAD_FILE)));
+        Commit currentCommit = Commit.fromFile(join(COMMITS_DIR,
+                readContentsAsString(HEAD_FILE)));
         if (!stage.containsStagedFile(fileName) && !currentCommit.containsFile(fileName)) {
             System.out.println("No reason to remove the file.");
             System.exit(0);
@@ -167,7 +170,8 @@ public class Repository {
             System.out.println("===");
             System.out.println("commit " + hash);
             if (commit.getSecondParent() != null) {
-                System.out.println("Merge: " + commit.getParent().substring(0, 7) + " " + commit.getSecondParent().substring(0, 7));
+                System.out.println("Merge: " + commit.getParent().substring(0
+                        , 7) + " " + commit.getSecondParent().substring(0, 7));
             }
             System.out.println("Date: " + commit.getTime());
             System.out.println(commit.getMessage());
@@ -191,7 +195,8 @@ public class Repository {
             System.out.println("===");
             System.out.println("commit " + commitFile.getName());
             if (commit.getSecondParent() != null) {
-                System.out.println("Merge: " + commit.getParent().substring(0, 7) + " " + commit.getSecondParent().substring(0, 7));
+                System.out.println("Merge: " + commit.getParent().substring(0
+                        , 7) + " " + commit.getSecondParent().substring(0, 7));
             }
             System.out.println("Date: " + commit.getTime());
             System.out.println(commit.getMessage());
@@ -245,7 +250,8 @@ public class Repository {
         System.out.println();
 
         Stage stage = Stage.fromFile(STAGING_FILE);
-        Commit commit = Commit.fromFile(join(COMMITS_DIR, readContentsAsString(HEAD_FILE)));
+        Commit commit = Commit.fromFile(join(COMMITS_DIR,
+                readContentsAsString(HEAD_FILE)));
         List<String> workingDirectoryFiles = plainFilenamesIn(CWD);
         if (workingDirectoryFiles == null) {
             return;
@@ -272,7 +278,10 @@ public class Repository {
             } else {
                 String localHash = sha1(readContents(file));
                 if (entry.getValue().equals(localHash)) {
-                    /* Staged for addition, but with different contents than in the working directory */
+                    /*
+                     * Staged for addition, but with different contents than
+                     * in the working directory
+                     */
                     stagedFiles.add(fileName);
                 } else {
                     /* Staged for addition, modified in the working directory */
@@ -295,8 +304,13 @@ public class Repository {
                 }
             } else {
                 String localHash = sha1(readContents(file));
-                if (!entry.getValue().equals(localHash) && !addedStagedFiles.containsKey(fileName) && !removedStagedFiles.contains(fileName)) {
-                    /* Tracked in the current commit, changed in the working directory, but not staged */
+                if (!entry.getValue().equals(localHash) &&
+                        !addedStagedFiles.containsKey(fileName) &&
+                        !removedStagedFiles.contains(fileName)) {
+                    /*
+                     * Tracked in the current commit, changed in the working
+                     * directory, but not staged
+                     */
                     modifiedFiles.put(fileName, 1);
                 }
                 trackedFiles.add(fileName);
@@ -306,7 +320,10 @@ public class Repository {
         for (String fileName : removedStagedFiles) {
             File file = join(CWD, fileName);
             if (file.exists()) {
-                /* have been staged for removal, but then re-created without Gitlet’s knowledge */
+                /*
+                 * have been staged for removal, but then re-created
+                 * without Gitlet’s knowledge
+                 */
                 untrackedFiles.add(fileName);
             } else {
                 removedFiles.add(fileName);
@@ -523,8 +540,11 @@ public class Repository {
             return;
         }
         for (String fileName : workingDirectoryFiles) {
-            if ((!currentCommit.containsFile(fileName) && !stage.containsStagedFile(fileName)) || stage.containsRemovedFile(fileName)) {
-                System.out.println("There is an untracked file in the way; delete it or add it first.");
+            if ((!currentCommit.containsFile(fileName) &&
+                    !stage.containsStagedFile(fileName)) ||
+                    stage.containsRemovedFile(fileName)) {
+                System.out.println("There is an untracked file in the way; " +
+                        "delete it or add it first.");
                 System.exit(0);
             }
         }
@@ -538,7 +558,8 @@ public class Repository {
         }
 
         /* Checkout files from the target commit */
-        for (Map.Entry<String, String> entry : targetCommit.getBlobs().entrySet()) {
+        for (Map.Entry<String, String> entry :
+                targetCommit.getBlobs().entrySet()) {
             String fileName = entry.getKey();
             String blobHash = entry.getValue();
             File blobFile = join(BLOBS_DIR, blobHash);
