@@ -475,7 +475,9 @@ public class Repository {
         for (Map.Entry<String, String> entry : givenBlobs.entrySet()) {
             String fileName = entry.getKey();
             String givenFileHash = entry.getValue();
-            if (lockedFiles.contains(fileName)) continue;
+            if (lockedFiles.contains(fileName)) {
+                continue;
+            }
 
             if (splitBlobs.containsKey(fileName)
                     && currentBlobs.containsKey(fileName)) {
@@ -483,25 +485,31 @@ public class Repository {
                 String currentFileHash = currentBlobs.get(fileName);
                 if (!Objects.equals(splitFileHash, givenCommitHash)
                         && Objects.equals(splitFileHash, currentFileHash)) {
-                    checkoutFileFromCommit(givenCommitHash, fileName);
-                    stage.add(fileName);
+                    writeContents(join(CWD, fileName),
+                            readContents(join(BLOBS_DIR, givenFileHash)));
+                    newBlobs.put(fileName, givenFileHash);
                 } else if (!Objects.equals(splitFileHash, givenFileHash)
                         && !Objects.equals(splitFileHash, currentFileHash)
                         && !Objects.equals(currentFileHash, givenFileHash)) {
-                    dealConflict(fileName, currentFileHash, givenFileHash);
+                    String hash = dealConflict(fileName, currentFileHash,
+                            givenFileHash);
+                    newBlobs.put(fileName, hash);
                     conflict = true;
                 }
             } else if (!splitBlobs.containsKey(fileName)
                     && currentBlobs.containsKey(fileName)) {
                 String currentFileHash = currentBlobs.get(fileName);
                 if (!Objects.equals(currentFileHash, givenFileHash)) {
-                    dealConflict(fileName, currentFileHash, givenFileHash);
+                    String hash = dealConflict(fileName, currentFileHash,
+                            givenFileHash);
+                    newBlobs.put(fileName, hash);
                     conflict = true;
                 }
             } else if (!splitBlobs.containsKey(fileName)
                     && !currentBlobs.containsKey(fileName)) {
-                checkoutFileFromCommit(givenCommitHash, fileName);
-                stage.add(fileName);
+                writeContents(join(CWD, fileName),
+                        readContents(join(BLOBS_DIR, givenFileHash)));
+                newBlobs.put(fileName, givenFileHash);
             }
             lockedFiles.add(fileName);
         }
@@ -510,7 +518,9 @@ public class Repository {
         for (Map.Entry<String, String> entry : currentBlobs.entrySet()) {
             String fileName = entry.getKey();
             String currentFileHash = entry.getValue();
-            if (lockedFiles.contains(fileName)) continue;
+            if (lockedFiles.contains(fileName)) {
+                continue;
+            }
 
             if (splitBlobs.containsKey(fileName) && !givenBlobs.containsKey(fileName)) {
                 String splitFileHash = splitBlobs.get(fileName);
@@ -528,7 +538,6 @@ public class Repository {
                 + currentBranch + ".", currentCommitHash, newBlobs);
         commit.setSecondParent(givenCommitHash);
         submitCommit(commit, currentBranch);
-        writeObject(STAGING_FILE, stage);
 
         /* Print whether there is a conflict */
         if (conflict) {
@@ -698,7 +707,7 @@ public class Repository {
         return null;
     }
 
-    private static void dealConflict(String fileName, String currentFileHash,
+    private static String dealConflict(String fileName, String currentFileHash,
                                      String givenFileHash) {
         File currentFile = join(BLOBS_DIR, currentFileHash);
         File givenFile = join(BLOBS_DIR, givenFileHash);
@@ -711,5 +720,10 @@ public class Repository {
                 + "=======\n" + givenContent + ">>>>>>>\n";
 
         writeContents(file, conflictContent);
+
+        String hash = sha1(conflictContent);
+        File blobFile = join(BLOBS_DIR, hash);
+        writeContents(blobFile, conflictContent);
+        return hash;
     }
 }
