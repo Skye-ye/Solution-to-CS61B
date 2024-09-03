@@ -172,13 +172,13 @@ public class Repository {
             System.out.println("===");
             System.out.println("commit " + hash);
             if (commit.getSecondParent() != null) {
-                System.out.println("Merge: " + commit.getParent().substring(0,
+                System.out.println("Merge: " + commit.getFirstParent().substring(0,
                         7) + " " + commit.getSecondParent().substring(0, 7));
             }
             System.out.println("Date: " + commit.getTime());
             System.out.println(commit.getMessage());
             System.out.println();
-            hash = commit.getParent();
+            hash = commit.getFirstParent();
         }
     }
 
@@ -197,7 +197,7 @@ public class Repository {
             System.out.println("===");
             System.out.println("commit " + commitFile.getName());
             if (commit.getSecondParent() != null) {
-                System.out.println("Merge: " + commit.getParent().substring(0,
+                System.out.println("Merge: " + commit.getFirstParent().substring(0,
                         7) + " " + commit.getSecondParent().substring(0, 7));
             }
             System.out.println("Date: " + commit.getTime());
@@ -709,20 +709,45 @@ public class Repository {
     }
 
     private static String findSplitPoint(String hash1, String hash2) {
-        HashSet<String> ancestors = new HashSet<>();
+        HashSet<String> ancestors1 = new HashSet<>();
+        HashSet<String> ancestors2 = new HashSet<>();
+        Queue<String> queue1 = new LinkedList<>();
+        Queue<String> queue2 = new LinkedList<>();
 
-        /* Find all the ancestors of hash1 */
-        while (hash1 != null) {
-            ancestors.add(hash1);
-            hash1 = Commit.fromFile(join(COMMITS_DIR, hash1)).getParent();
-        }
+        queue1.offer(hash1);
+        queue2.offer(hash2);
 
-        /* Find the first common ancestor of hash1 and hash2*/
-        while (hash2 != null) {
-            if (ancestors.contains(hash2)) {
-                return hash2;
+        /* Use BFS to search for latest common ancestor */
+        while (!queue1.isEmpty() || !queue2.isEmpty()) {
+            if (!queue1.isEmpty()) {
+                String current = queue1.poll();
+                if (!ancestors1.add(current)) {
+                    continue;
+                }
+                if (ancestors2.contains(current)) {
+                    return current;
+                }
+                Commit commit = Commit.fromFile(join(COMMITS_DIR, current));
+                String parent = commit.getFirstParent();
+                String secondParent = commit.getSecondParent();
+                if (parent != null) queue1.offer(parent);
+                if (secondParent != null) queue1.offer(secondParent);
             }
-            hash2 = Commit.fromFile(join(COMMITS_DIR, hash2)).getParent();
+
+            if (!queue2.isEmpty()) {
+                String current = queue2.poll();
+                if (!ancestors2.add(current)) {
+                    continue;
+                }
+                if (ancestors1.contains(current)) {
+                    return current;
+                }
+                Commit commit = Commit.fromFile(join(COMMITS_DIR, current));
+                String parent = commit.getFirstParent();
+                String secondParent = commit.getSecondParent();
+                if (parent != null) queue2.offer(parent);
+                if (secondParent != null) queue2.offer(secondParent);
+            }
         }
 
         return null;

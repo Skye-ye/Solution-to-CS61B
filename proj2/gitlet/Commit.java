@@ -26,7 +26,7 @@ public class Commit implements Serializable {
     /** The time of this Commit. */
     private final Instant time;
     /** The parent of this Commit. */
-    private final String parent;
+    private final String firstParent;
     /** The second parent if this Commit is a merge. */
     private String secondParent;
     /** The blobs of this Commit. */
@@ -34,7 +34,7 @@ public class Commit implements Serializable {
 
     public Commit(String message, String parent, HashMap<String, String> blobs) {
         this.message = message;
-        this.parent = parent;
+        this.firstParent = parent;
         this.secondParent = null;
         if (parent == null) {
             this.time = Instant.EPOCH;
@@ -84,8 +84,8 @@ public class Commit implements Serializable {
         }
     }
 
-    public String getParent() {
-        return parent;
+    public String getFirstParent() {
+        return firstParent;
     }
 
     public String getMessage() {
