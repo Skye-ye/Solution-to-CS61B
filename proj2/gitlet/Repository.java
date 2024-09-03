@@ -303,7 +303,7 @@ public class Repository {
         System.out.println();
     }
 
-        public void checkoutFileFromCommit(String hash, String fileName) {
+    public void checkoutFileFromCommit(String hash, String fileName) {
         /* Error checking */
         checkGitletDir();
 
@@ -498,9 +498,9 @@ public class Repository {
         System.out.println();
     }
 
-    private static void printStatus(TreeSet<String> stagedFiles
-            , TreeSet<String> removedFiles
-            , TreeMap<String, Integer> modifiedFiles) {
+    private static void printStatus(TreeSet<String> stagedFiles,
+                                    TreeSet<String> removedFiles,
+                                    TreeMap<String, Integer> modifiedFiles) {
         System.out.println("=== Staged Files ===");
         for (String fileName : stagedFiles) {
             System.out.println(fileName);
