@@ -518,25 +518,6 @@ public class Repository {
         /* Read remote information */
         remotes.put(remoteName, remoteDir);
 
-        /* Read remote branches */
-        /*
-        File remoteBranchesDir = join(REMOTE_DIR, remoteName);
-        remoteBranchesDir.mkdirs();
-        List<String> remoteBranches = plainFilenamesIn(join(remoteDir, "heads"));
-        if (remoteBranches == null) {
-            System.exit(0);
-        }
-         */
-
-        /* Copy remote branches */
-        /*
-        for (String remoteBranch : remoteBranches) {
-            File remoteBranchFile = join(remoteBranchesDir, remoteBranch);
-            writeContents(remoteBranchFile, readContentsAsString(join(remoteDir,
-                    "heads", remoteBranch)));
-        }
-         */
-
         /* Write remote information */
         writeObject(REMOTE_INFO_FILE, remotes);
     }
@@ -549,14 +530,23 @@ public class Repository {
         @SuppressWarnings("unchecked")
         HashMap<String, String> remotes =
                 readObject(REMOTE_INFO_FILE, HashMap.class);
-        if (remotes.containsKey(remoteName)) {
-            System.out.println("A remote with that name already exists.");
+        if (!remotes.containsKey(remoteName)) {
+            System.out.println("A remote with that name does not exist.");
             System.exit(0);
         }
 
-        /* Remove the remote */
-        // remoteFile.delete();
-
+        /* Remove the remote branches */
+        File remoteBranchFile = join(BRANCHES_DIR, remoteName);
+        if (remoteBranchFile.exists()) {
+            List<String> branches = plainFilenamesIn(remoteBranchFile);
+            if (branches != null) {
+                for (String branch : branches) {
+                    File branchFile = join(remoteBranchFile, branch);
+                    branchFile.delete();
+                }
+            }
+            remoteBranchFile.delete();
+        }
 
         /* Remove the remote information */
         remotes.remove(remoteName);
@@ -613,8 +603,8 @@ public class Repository {
             remoteCommitFile.createNewFile();
             writeObject(remoteCommitFile, localCommit);
 
-            for (Map.Entry<String, String> entry :
-                    localCommit.getBlobs().entrySet()) {
+            for (Map.Entry<String, String> entry
+                    : localCommit.getBlobs().entrySet()) {
                 String blobHash = entry.getValue();
                 File localBlobFile = join(BLOBS_DIR, blobHash);
                 File remoteBlobFile = join(remoteBlobDir, blobHash);
@@ -688,8 +678,8 @@ public class Repository {
                 localCommitFile.createNewFile();
                 writeObject(localCommitFile, remoteCommit);
 
-                for (Map.Entry<String, String> entry :
-                        remoteCommit.getBlobs().entrySet()) {
+                for (Map.Entry<String, String> entry
+                        : remoteCommit.getBlobs().entrySet()) {
                     String blobHash = entry.getValue();
                     File remoteBlobFile = join(remoteBlobDir, blobHash);
                     File localBlobFile = join(BLOBS_DIR, blobHash);
@@ -1065,7 +1055,7 @@ public class Repository {
     }
 
     private static boolean isAncestor(String localHash, String remoteHash) {
-        while(localHash != null) {
+        while (localHash != null) {
             if (localHash.equals(remoteHash)) {
                 return true;
             }
@@ -1088,14 +1078,14 @@ public class Repository {
             }
         }
 
-        File CommitDir = join(remoteDir, "objects", "commits");
-        File BlobDir = join(remoteDir, "objects", "blobs");
-        File commitFile = join(CommitDir, commitHash);
+        File commitDir = join(remoteDir, "objects", "commits");
+        File blobDir = join(remoteDir, "objects", "blobs");
+        File commitFile = join(commitDir, commitHash);
         Commit commit = Commit.fromFile(commitFile);
         for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
             String fileName = entry.getKey();
             String blobHash = entry.getValue();
-            File blobFile = join(BlobDir, blobHash);
+            File blobFile = join(blobDir, blobHash);
             File file = join(remoteWorkingDir, fileName);
             writeContents(file, readContents(blobFile));
         }
