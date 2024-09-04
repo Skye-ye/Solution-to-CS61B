@@ -36,6 +36,10 @@ public class Repository {
     public static final File STAGING_FILE = join(GITLET_DIR, "staging");
     /** The head file. */
     public static final File HEAD_FILE = join(GITLET_DIR, "HEAD");
+    /** The remote directory. */
+    // public static final File REMOTE_DIR = join(GITLET_DIR, "remotes");
+    /** The remote information file. */
+    public static final File REMOTE_INFO_FILE = join(GITLET_DIR, "remote");
     /** Default branch. */
     public static final String DEFAULT_BRANCH = "master";
 
@@ -54,6 +58,7 @@ public class Repository {
         CURRENT_BRANCH.createNewFile();
         STAGING_FILE.createNewFile();
         HEAD_FILE.createNewFile();
+        REMOTE_INFO_FILE.createNewFile();
 
         /* Create the initial commit */
         Commit initialCommit = new Commit("initial commit", null, null);
@@ -62,6 +67,10 @@ public class Repository {
         /* Create a staging file */
         Stage stage = new Stage();
         writeObject(STAGING_FILE, stage);
+
+        /* Create a remote object */
+        HashMap<String, String> remotes = new HashMap<>();
+        writeObject(REMOTE_INFO_FILE, remotes);
     }
 
     public void add(String fileName) {
@@ -490,6 +499,222 @@ public class Repository {
         }
     }
 
+    public void addRemote(String remoteName, String remoteDir) {
+        /* Error checking */
+        checkGitletDir();
+
+        /* Check if already exists */
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> remotes =
+                readObject(REMOTE_INFO_FILE, HashMap.class);
+        if (remotes.containsKey(remoteName)) {
+            System.out.println("A remote with that name already exists.");
+            System.exit(0);
+        }
+
+        /* Convert the path */
+        remoteDir = convertPath(remoteDir);
+
+        /* Read remote information */
+        remotes.put(remoteName, remoteDir);
+
+        /* Read remote branches */
+        /*
+        File remoteBranchesDir = join(REMOTE_DIR, remoteName);
+        remoteBranchesDir.mkdirs();
+        List<String> remoteBranches = plainFilenamesIn(join(remoteDir, "heads"));
+        if (remoteBranches == null) {
+            System.exit(0);
+        }
+         */
+
+        /* Copy remote branches */
+        /*
+        for (String remoteBranch : remoteBranches) {
+            File remoteBranchFile = join(remoteBranchesDir, remoteBranch);
+            writeContents(remoteBranchFile, readContentsAsString(join(remoteDir,
+                    "heads", remoteBranch)));
+        }
+         */
+
+        /* Write remote information */
+        writeObject(REMOTE_INFO_FILE, remotes);
+    }
+
+    public void rmRemote(String remoteName) {
+        /* Error checking */
+        checkGitletDir();
+
+        /* Check if the remote exists */
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> remotes =
+                readObject(REMOTE_INFO_FILE, HashMap.class);
+        if (remotes.containsKey(remoteName)) {
+            System.out.println("A remote with that name already exists.");
+            System.exit(0);
+        }
+
+        /* Remove the remote */
+        // remoteFile.delete();
+
+
+        /* Remove the remote information */
+        remotes.remove(remoteName);
+        writeObject(REMOTE_INFO_FILE, remotes);
+    }
+
+    public void push(String remoteName, String remoteBranch) throws IOException {
+        /* Error checking */
+        checkGitletDir();
+
+        /* Check if the remote exists */
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> remotes =
+                readObject(REMOTE_INFO_FILE, HashMap.class);
+        if (!remotes.containsKey(remoteName)) {
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+
+        /* Get the remote directory */
+        File remoteDir = new File(remotes.get(remoteName));
+        if (!remoteDir.exists()) {
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+
+        /* Get the remote branch */
+        File remoteBranchFile = join(remoteDir, "heads", remoteBranch);
+        if (!remoteBranchFile.exists()) {
+            remoteBranchFile.createNewFile();
+            String remoteInitHash = findRemoteInitHash(remoteDir);
+            writeContents(remoteBranchFile, remoteInitHash);
+        }
+
+        /*
+         * Check if the remote branch’s head is in the
+         * history of the current local head
+         */
+        String localBranch = readContentsAsString(CURRENT_BRANCH);
+        File localBranchFile = join(BRANCHES_DIR, localBranch);
+        String localCommitHash = readContentsAsString(localBranchFile);
+        String remoteCommitHash = readContentsAsString(remoteBranchFile);
+        if (!isAncestor(localCommitHash, remoteCommitHash)) {
+            System.out.println("Please pull down remote changes before pushing.");
+            System.exit(0);
+        }
+
+        /* Append the future commits to the remote branch */
+        File remoteCommitDir = join(remoteDir, "objects", "commits");
+        File remoteBlobDir = join(remoteDir, "objects", "blobs");
+        while (!localCommitHash.equals(remoteCommitHash)) {
+            Commit localCommit = Commit.fromFile(join(COMMITS_DIR, localCommitHash));
+            File remoteCommitFile = join(remoteCommitDir, localCommitHash);
+            remoteCommitFile.createNewFile();
+            writeObject(remoteCommitFile, localCommit);
+
+            for (Map.Entry<String, String> entry :
+                    localCommit.getBlobs().entrySet()) {
+                String blobHash = entry.getValue();
+                File localBlobFile = join(BLOBS_DIR, blobHash);
+                File remoteBlobFile = join(remoteBlobDir, blobHash);
+                if (!remoteBlobFile.exists()) {
+                    remoteBlobFile.createNewFile();
+                    writeContents(remoteBlobFile, readContents(localBlobFile));
+                }
+            }
+
+            localCommitHash = localCommit.getFirstParent();
+        }
+
+        /* Reset remote to the front of the append commits */
+        writeContents(remoteBranchFile, readContentsAsString(localBranchFile));
+        writeContents(join(remoteDir, "HEAD"),
+                readContentsAsString(remoteBranchFile));
+
+        /* Update the working directory in remote repository */
+        remoteReset(remoteDir, readContentsAsString(remoteBranchFile));
+    }
+
+    public void fetch(String remoteName, String remoteBranch) throws IOException {
+        /* Error checking */
+        checkGitletDir();
+
+        /* Check if the remote exists */
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> remotes =
+                readObject(REMOTE_INFO_FILE, HashMap.class);
+        if (!remotes.containsKey(remoteName)) {
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+
+        /* Get the remote directory */
+        File remoteDir = new File(remotes.get(remoteName));
+        if (!remoteDir.exists()) {
+            System.out.println("Remote directory not found.");
+            System.exit(0);
+        }
+
+        /* Get the remote branch */
+        File remoteBranchFile = join(remoteDir, "heads", remoteBranch);
+        if (!remoteBranchFile.exists()) {
+            System.out.println("That remote does not have that branch.");
+            System.exit(0);
+        }
+
+        /* Get the remote commit dir and blob dir */
+        File remoteCommitDir = join(remoteDir, "objects", "commits");
+        File remoteBlobDir = join(remoteDir, "objects", "blobs");
+
+        /* Create local branch */
+        File localDir = join(BRANCHES_DIR, remoteName);
+        if (!localDir.exists()) {
+            localDir.mkdirs();
+        }
+        File localBranchFile = join(localDir, remoteBranch);
+        if (!localBranchFile.exists()) {
+            localBranchFile.createNewFile();
+        }
+        writeContents(localBranchFile, readContents(remoteBranchFile));
+
+        /* Copy commits and blobs to local repository */
+        String remoteCommitHash = readContentsAsString(remoteBranchFile);
+        while (remoteCommitHash != null) {
+            File remoteCommitFile = join(remoteCommitDir, remoteCommitHash);
+            Commit remoteCommit = Commit.fromFile(remoteCommitFile);
+            File localCommitFile = join(COMMITS_DIR, remoteCommitHash);
+            if (!localCommitFile.exists()) {
+                localCommitFile.createNewFile();
+                writeObject(localCommitFile, remoteCommit);
+
+                for (Map.Entry<String, String> entry :
+                        remoteCommit.getBlobs().entrySet()) {
+                    String blobHash = entry.getValue();
+                    File remoteBlobFile = join(remoteBlobDir, blobHash);
+                    File localBlobFile = join(BLOBS_DIR, blobHash);
+                    if (!localBlobFile.exists()) {
+                        localBlobFile.createNewFile();
+                        writeContents(localBlobFile, readContents(remoteBlobFile));
+                    }
+                }
+            }
+
+            remoteCommitHash = remoteCommit.getFirstParent();
+        }
+    }
+
+    public void pull(String remoteName, String remoteBranch) throws IOException {
+        /* Error checking */
+        checkGitletDir();
+
+        /* Fetch the remote branch */
+        fetch(remoteName, remoteBranch);
+
+        /* Merge the remote branch */
+        merge(remoteName + "/" + remoteBranch);
+    }
+
     private static void checkGitletDir() {
         if (!GITLET_DIR.exists()) {
             System.out.println("Not in an initialized Gitlet directory.");
@@ -825,5 +1050,58 @@ public class Repository {
             lockedFiles.add(fileName);
         }
         return conflict;
+    }
+
+    private static String findRemoteInitHash(File remoteDir) {
+        String headHash = readContentsAsString(join(remoteDir, "HEAD"));
+        String initHash = headHash;
+        while (headHash != null) {
+            initHash = headHash;
+            headHash = Commit.fromFile(join(remoteDir, "objects", "commits",
+                    headHash)).getFirstParent();
+        }
+
+        return initHash;
+    }
+
+    private static boolean isAncestor(String localHash, String remoteHash) {
+        while(localHash != null) {
+            if (localHash.equals(remoteHash)) {
+                return true;
+            }
+            localHash = Commit.fromFile(join(COMMITS_DIR,
+                    localHash)).getFirstParent();
+        }
+        return false;
+    }
+
+    private static void remoteReset(File remoteDir, String commitHash) {
+        File remoteWorkingDir = remoteDir.getParentFile();
+        List<String> workingDirectoryFiles = plainFilenamesIn(remoteWorkingDir);
+        if (workingDirectoryFiles == null) {
+            return;
+        }
+        for (String fileName : workingDirectoryFiles) {
+            File file = join(remoteWorkingDir, fileName);
+            if (file.exists()) {
+                file.delete();
+            }
+        }
+
+        File CommitDir = join(remoteDir, "objects", "commits");
+        File BlobDir = join(remoteDir, "objects", "blobs");
+        File commitFile = join(CommitDir, commitHash);
+        Commit commit = Commit.fromFile(commitFile);
+        for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
+            String fileName = entry.getKey();
+            String blobHash = entry.getValue();
+            File blobFile = join(BlobDir, blobHash);
+            File file = join(remoteWorkingDir, fileName);
+            writeContents(file, readContents(blobFile));
+        }
+    }
+
+    private static String convertPath(String path) {
+        return path.replace("/", File.separator);
     }
 }
