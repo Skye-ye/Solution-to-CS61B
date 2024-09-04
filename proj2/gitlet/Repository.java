@@ -621,9 +621,6 @@ public class Repository {
         writeContents(remoteBranchFile, readContentsAsString(localBranchFile));
         writeContents(join(remoteDir, "HEAD"),
                 readContentsAsString(remoteBranchFile));
-
-        /* Update the working directory in remote repository */
-        remoteReset(remoteDir, readContentsAsString(remoteBranchFile));
     }
 
     public void fetch(String remoteName, String remoteBranch) throws IOException {
@@ -1063,32 +1060,6 @@ public class Repository {
                     localHash)).getFirstParent();
         }
         return false;
-    }
-
-    private static void remoteReset(File remoteDir, String commitHash) {
-        File remoteWorkingDir = remoteDir.getParentFile();
-        List<String> workingDirectoryFiles = plainFilenamesIn(remoteWorkingDir);
-        if (workingDirectoryFiles == null) {
-            return;
-        }
-        for (String fileName : workingDirectoryFiles) {
-            File file = join(remoteWorkingDir, fileName);
-            if (file.exists()) {
-                file.delete();
-            }
-        }
-
-        File commitDir = join(remoteDir, "objects", "commits");
-        File blobDir = join(remoteDir, "objects", "blobs");
-        File commitFile = join(commitDir, commitHash);
-        Commit commit = Commit.fromFile(commitFile);
-        for (Map.Entry<String, String> entry : commit.getBlobs().entrySet()) {
-            String fileName = entry.getKey();
-            String blobHash = entry.getValue();
-            File blobFile = join(blobDir, blobHash);
-            File file = join(remoteWorkingDir, fileName);
-            writeContents(file, readContents(blobFile));
-        }
     }
 
     private static String convertPath(String path) {
